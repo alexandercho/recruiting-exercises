@@ -1,6 +1,22 @@
 class InventoryAllocator(object):
 
     def __init__(self, order={}, warehouses=[]):
+        """
+        Constructor for the allocator. If order or warehouses is empty,
+        not given, or warehouse has repeat names, self.cheapest_shipment will
+        be an empty list.
+
+        Parameters:
+
+        order (dic): A dictionary of orders with item names as keys and
+        non-negative integers as the values. Example format:
+            { 'apple': 1, 'orange':2, 'berry': 4}
+
+        warehouses (list): A list of dictionaries with warehouse names as keys
+        and dictionaries with the same format as order values. Example format:
+            [{ 'name': 'owd', 'inventory': { 'apple': 1 } },
+             { 'name': 'dm', 'inventory': { 'orange':2 }}]
+        """
         self._cheapest_shipment = []
         self._warehouses = warehouses
         wh_names = list(map(lambda x: x['name'], warehouses))
@@ -8,11 +24,39 @@ class InventoryAllocator(object):
             self._cheapest_shipment =  self.cheapest_shipment(order)
 
     def get_cheapest_shipment(self):
+        """
+        Getter function for the cheapest shipment order list.
+        The list is sorted from most to least expensive.
+
+        Returns:
+        list: List of dictionaries where the only key is the name of the
+            warehouse and the values are dictionaries of item names paired with
+            the number ordered. Example format:
+                [{ 'amz': { 'orange':2, 'berry': 4 }},
+                 { 'owd': { 'apple': 1 } }]
+        """
         return self._cheapest_shipment
 
-    #Destructive method finds the cheapest shipment for an order
-    #and returns an empty list if such an order cannot be made
     def cheapest_shipment(self, order):
+        """
+        Calculates the cheapest shipment for an order in the form of a list
+        ordered by most expensive warehouse to least expensive. Method works
+        destructively on the parameter order
+
+        Parameters:
+
+        order (dic): A dictionary of orders with item names as keys and
+            non-negative integers as the values. Example format:
+                 { 'apple': 1, 'orange':2, 'berry': 4}
+
+        Returns:
+        list: List of dictionaries where the only key is the name of the
+            warehouse and the values are dictionaries of item names paired with
+            the number ordered. The list is sorted from most to least expensive.
+            Example format:
+                 [{ 'amz': { 'orange':2, 'berry': 4 }},
+                  { 'owd': { 'apple': 1 } }]
+        """
         output = []
         for wh in self._warehouses:
             wh_order = {wh['name']:{}}
@@ -40,9 +84,26 @@ class InventoryAllocator(object):
 
         return output[::-1]
 
-    #Optimizes the shipment so that if all the orders in a warehouse can
-    #be distributed to others already in the order, it gets reallocated
     def redistribute(self, orders):
+        """
+        Attempts to redistribute all of the items in the order from the first warehouse
+        to orders from all the others. If all the items cannot be redistributed,
+        this returns the original list of orders.
+
+        Parameters:
+
+        order (list): A list of dictionaries where the only key is the name of
+            the warehouse and the values are dictionaries of item names paired
+            with the number ordered. Example format:
+                [{ 'amz': { 'orange':2, 'berry': 4 }},
+                 { 'owd': { 'apple': 1 } }]
+
+        Returns:
+        list: List of dictionaries where the only key is the name of the
+            warehouse and the values are dictionaries of item names paired with
+            the number ordered. Example format:
+                [{ 'apple': 1, 'amz': { 'orange':2, 'berry': 4 }}]
+        """
         orig_orders = orders.copy()
         first_order  = orders[0][list(orders[0])[0]]
         other_orders =  orders[1:]
@@ -63,7 +124,7 @@ class InventoryAllocator(object):
                         wh[wh_name][item] = ord_amt
                     first_order[item] -= ord_amt
 
-            for item in [key for key  in first_order if first_order[key] == 0]:
+            for item in [key for key in first_order if first_order[key] == 0]:
                 del first_order[item]
 
         if first_order:
