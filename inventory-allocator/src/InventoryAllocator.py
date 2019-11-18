@@ -3,7 +3,8 @@ class InventoryAllocator(object):
     def __init__(self, order={}, warehouses=[]):
         self._cheapest_shipment = []
         self._warehouses = warehouses
-        if order and warehouses:
+        wh_names = list(map(lambda x: x['name'], warehouses))
+        if order and warehouses and len(wh_names) == len(set(wh_names)):
             self._cheapest_shipment =  self.cheapest_shipment(order)
 
     def get_cheapest_shipment(self):
@@ -32,13 +33,15 @@ class InventoryAllocator(object):
 
         if order:
             return []
-        
+
         l = len(output)
         for i in range(2, l+1):
             output[l-i:] = self.redistribute(output[l-i:])
 
         return output[::-1]
 
+    #Optimizes the shipment so that if all the orders in a warehouse can
+    #be distributed to others already in the order, it gets reallocated
     def redistribute(self, orders):
         orig_orders = orders.copy()
         first_order  = orders[0][list(orders[0])[0]]
